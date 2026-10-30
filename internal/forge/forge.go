@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package forge discovers repositories through the APIs of code hosting
 // platforms (GitHub, GitLab, Gitea/Forgejo) and describes single
 // repositories on any git server.

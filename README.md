@@ -272,3 +272,17 @@ name validation and terminal sanitization.
 | `internal/engine` | sync/verify/gc/inventory, scheduling, ref preservation |
 | `internal/ui` | live progress, plain and quiet output, summaries |
 | `internal/cli` | commands, argument parsing, help, completions |
+
+## License
+
+Copyright 2026 Sylirre.
+
+git-archive is licensed under the [Apache License, Version 2.0](LICENSE).
+Every source file carries an SPDX header
+(`SPDX-License-Identifier: Apache-2.0`).
+
+Binaries are statically linked and also contain the Go runtime and
+`golang.org/x/{sys,term}`, which are under the BSD-3-Clause license.
+Their notices are in [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES), and
+`make install` installs them together with `LICENSE`. Ship both files
+with binary distributions.

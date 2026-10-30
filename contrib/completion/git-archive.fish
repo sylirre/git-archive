@@ -1,4 +1,7 @@
 # fish completion for git-archive
+# SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+# SPDX-License-Identifier: Apache-2.0
+
 complete -c git-archive -f
 complete -c git-archive -n __fish_use_subcommand -a sync -d 'add sources (if given) and clone or update all repositories'
 complete -c git-archive -n __fish_use_subcommand -a add -d 'add or reconfigure sources without syncing'

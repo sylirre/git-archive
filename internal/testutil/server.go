@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package testutil provides a self-contained forge for integration tests:
 // bare repositories served over smart HTTP by git http-backend (through
 // net/http/cgi), and a GitHub-compatible API describing them.

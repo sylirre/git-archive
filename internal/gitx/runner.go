@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package gitx runs the system git binary in a hardened, observable way.
 //
 // Every invocation gets a sanitised environment, a fixed set of

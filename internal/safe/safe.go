@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package safe holds the small set of primitives that stand between data
 // received from the network and the local host: validation of names that
 // become filesystem paths, containment checks for joined paths, and

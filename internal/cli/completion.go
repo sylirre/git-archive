@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 package cli
 
 import (
@@ -27,6 +30,11 @@ func commandNames() []string {
 	return names
 }
 
+// scriptHeader states the license of the generated scripts, which are
+// also committed under contrib/completion and installed from there.
+const scriptHeader = "# SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>\n" +
+	"# SPDX-License-Identifier: Apache-2.0\n"
+
 // valueWords lists fixed completions for option values.
 var valueWords = map[string]string{
 	"provider": "github gitlab gitea git",
@@ -49,7 +57,7 @@ func completionScript(shell string) (string, error) {
 func bashCompletion() string {
 	var b strings.Builder
 	names := strings.Join(commandNames(), " ")
-	b.WriteString("# bash completion for git-archive\n_git_archive() {\n")
+	b.WriteString("# bash completion for git-archive\n" + scriptHeader + "\n_git_archive() {\n")
 	b.WriteString("    local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]} cmd= w\n")
 	fmt.Fprintf(&b, "    local commands=%q\n", names)
 	b.WriteString("    for w in \"${COMP_WORDS[@]:1:COMP_CWORD-1}\"; do\n")
@@ -108,7 +116,8 @@ func zshSpecs(fs *flagSet) []string {
 
 func zshCompletion() string {
 	var b strings.Builder
-	b.WriteString("#compdef git-archive\n\n_git_archive() {\n  local -a cmds\n  cmds=(\n")
+	// "#compdef" must stay on the first line for zsh to pick the file up.
+	b.WriteString("#compdef git-archive\n" + scriptHeader + "\n_git_archive() {\n  local -a cmds\n  cmds=(\n")
 	for _, c := range commands {
 		fmt.Fprintf(&b, "    '%s:%s'\n", c.name, zshEscape(c.summary))
 	}
@@ -145,7 +154,7 @@ func fishCompletion() string {
 		}
 		return strings.Join(n, " ")
 	}
-	b.WriteString("# fish completion for git-archive\ncomplete -c git-archive -f\n")
+	b.WriteString("# fish completion for git-archive\n" + scriptHeader + "\ncomplete -c git-archive -f\n")
 	for _, c := range commands {
 		fmt.Fprintf(&b, "complete -c git-archive -n __fish_use_subcommand -a %s -d %s\n", c.name, fishQuote(c.summary))
 	}

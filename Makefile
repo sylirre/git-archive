@@ -1,7 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+# SPDX-License-Identifier: Apache-2.0
+
 PREFIX  ?= /usr/local
 BINDIR  ?= $(PREFIX)/bin
 MANDIR  ?= $(PREFIX)/share/man
 DATADIR ?= $(PREFIX)/share
+DOCDIR  ?= $(DATADIR)/doc/git-archive
 GO      ?= go
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X github.com/sylirre/git-archive/internal/cli.Version=$(VERSION)
@@ -39,12 +43,15 @@ install: build
 	install -Dm644 contrib/completion/git-archive.bash $(DESTDIR)$(DATADIR)/bash-completion/completions/git-archive
 	install -Dm644 contrib/completion/_git-archive $(DESTDIR)$(DATADIR)/zsh/site-functions/_git-archive
 	install -Dm644 contrib/completion/git-archive.fish $(DESTDIR)$(DATADIR)/fish/vendor_completions.d/git-archive.fish
+	install -Dm644 LICENSE $(DESTDIR)$(DOCDIR)/LICENSE
+	install -Dm644 THIRD_PARTY_LICENSES $(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/git-archive $(DESTDIR)$(MANDIR)/man1/git-archive.1 \
 	  $(DESTDIR)$(DATADIR)/bash-completion/completions/git-archive \
 	  $(DESTDIR)$(DATADIR)/zsh/site-functions/_git-archive \
-	  $(DESTDIR)$(DATADIR)/fish/vendor_completions.d/git-archive.fish
+	  $(DESTDIR)$(DATADIR)/fish/vendor_completions.d/git-archive.fish \
+	  $(DESTDIR)$(DOCDIR)/LICENSE $(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES
 
 clean:
 	rm -f git-archive coverage.out

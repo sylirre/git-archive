@@ -1,4 +1,7 @@
 # bash completion for git-archive
+# SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+# SPDX-License-Identifier: Apache-2.0
+
 _git_archive() {
     local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]} cmd= w
     local commands="sync add remove rm exclude include list ls status verify gc config completion help version"

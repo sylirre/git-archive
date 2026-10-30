@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package archive models an archive directory: its configuration, its
 // bookkeeping state, its lock, and the mapping from repository IDs to
 // locations on disk.

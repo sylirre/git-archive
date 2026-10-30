@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Sylirre <107305601+sylirre@users.noreply.github.com>
+// SPDX-License-Identifier: Apache-2.0
+
 // Package engine implements the archive operations — sync, verify, gc
 // and inventory — on top of the archive model, the forge clients and the
 // hardened git runner. Work on repositories runs in a bounded worker
