@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/sylirre/git-archive/internal/archive"
 	"github.com/sylirre/git-archive/internal/gitx"
@@ -31,10 +32,24 @@ func (e *Engine) git(ctx context.Context, dir string, args ...string) (string, e
 	return strings.TrimRight(string(out), "\n"), err
 }
 
+// gitSilent runs a local git command that may produce no output for a
+// long time (gc on a huge repository), without the inactivity watchdog.
+func (e *Engine) gitSilent(ctx context.Context, dir string, args ...string) error {
+	c := gitx.Cmd{Dir: dir, GitDir: e.gitDir(dir), Args: args, NoIdleTimeout: true}
+	if !e.layoutBare() {
+		c.WorkTree = dir
+	}
+	_, err := e.Git.Run(ctx, c)
+	return err
+}
+
 // gitProgress runs a git command whose progress is reported to the UI.
 func (e *Engine) gitProgress(ctx context.Context, slot int, t *Task, dir string, args ...string) error {
 	c := gitx.Cmd{Dir: dir, GitDir: e.gitDir(dir), Args: args,
-		Progress: func(p gitx.Progress) { e.Reporter.Progress(slot, t, p) }}
+		Progress: func(p gitx.Progress) { e.Reporter.Progress(slot, t, p) },
+		// git-lfs only reports progress on a terminal and enforces its
+		// own network activity timeout.
+		NoIdleTimeout: len(args) > 0 && args[0] == "lfs"}
 	if !e.layoutBare() {
 		c.WorkTree = dir
 	}
@@ -173,9 +188,9 @@ func (e *Engine) update(ctx context.Context, slot int, t *Task, r *Result) error
 	if err != nil {
 		return err
 	}
-	stamp := e.now().UTC().Format("20060102T150405Z")
+	stamp := sync.OnceValue(func() string { return e.preserveStamp(ctx, t.Dir) })
 	if t.Opts.Preserve && len(rewritten) > 0 {
-		if err := e.preserve(ctx, t.Dir, stamp, rewritten); err != nil {
+		if err := e.preserve(ctx, t.Dir, stamp(), rewritten); err != nil {
 			return fmt.Errorf("preserving rewritten refs: %w", err)
 		}
 		r.Preserved += len(rewritten)
@@ -237,6 +252,21 @@ func (e *Engine) isAncestor(ctx context.Context, dir, a, b string) (bool, error)
 	return err == nil, err
 }
 
+// preserveStamp names this run's directory below refs/archive/: the UTC
+// time, with a counter appended in the unlikely case that an earlier run
+// in the same second used it already.
+func (e *Engine) preserveStamp(ctx context.Context, dir string) string {
+	base := e.now().UTC().Format("20060102T150405Z")
+	stamp := base
+	for i := 1; i < 100; i++ {
+		if out, _ := e.git(ctx, dir, "for-each-ref", "--count=1", "--format=x", "refs/archive/"+stamp+"/"); out == "" {
+			break
+		}
+		stamp = fmt.Sprintf("%s-%d", base, i)
+	}
+	return stamp
+}
+
 // preserve stores old ref values below refs/archive/<stamp>/ so that the
 // objects stay reachable (and survive gc) after upstream rewrote or
 // deleted them.
@@ -277,7 +307,7 @@ func (e *Engine) updateBareHead(ctx context.Context, t *Task, r *Result) {
 // branch. Local modifications are never overwritten: the working tree is
 // then left alone with a warning (the fetched history is safe in refs
 // either way).
-func (e *Engine) updateWorktree(ctx context.Context, slot int, t *Task, r *Result, stamp string, rewritten map[string]string) error {
+func (e *Engine) updateWorktree(ctx context.Context, slot int, t *Task, r *Result, stamp func() string, rewritten map[string]string) error {
 	cur, _ := e.git(ctx, t.Dir, "symbolic-ref", "-q", "--short", "HEAD")
 	target := t.Repo.DefaultBranch
 	if target == "" {
@@ -324,7 +354,7 @@ func (e *Engine) updateWorktree(ctx context.Context, slot int, t *Task, r *Resul
 			return err
 		}
 		if !ff {
-			if err := e.preserve(ctx, t.Dir, stamp, map[string]string{"refs/local/" + target: head}); err != nil {
+			if err := e.preserve(ctx, t.Dir, stamp(), map[string]string{"refs/local/" + target: head}); err != nil {
 				return err
 			}
 			r.Preserved++

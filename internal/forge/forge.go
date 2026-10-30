@@ -80,16 +80,19 @@ type Client interface {
 type Listing struct {
 	Repos   []Repo
 	Skipped []string // reasons for entries that were rejected
+	seen    map[string]bool
 }
 
 // add appends r unless its ID was already seen (pages can shift while a
 // listing is in progress, repeating entries).
 func (l *Listing) add(r Repo) {
-	for _, x := range l.Repos {
-		if x.ID == r.ID {
-			return
-		}
+	if l.seen == nil {
+		l.seen = map[string]bool{}
 	}
+	if l.seen[r.ID] {
+		return
+	}
+	l.seen[r.ID] = true
 	l.Repos = append(l.Repos, r)
 }
 
@@ -213,4 +216,14 @@ func checkPath(p string) error {
 		return fmt.Errorf("forge returned an unsafe path: %w", err)
 	}
 	return nil
+}
+
+// canonicalURL is the URL recorded for a resolved spec: the web URL for
+// http(s) sources, and the URL exactly as given for git transports (an
+// ssh URL must keep its user, e.g. "git@").
+func canonicalURL(s Spec) string {
+	if s.Scheme == "https" || s.Scheme == "http" {
+		return s.Scheme + "://" + s.Host + "/" + s.Path
+	}
+	return s.URL
 }

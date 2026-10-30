@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/sylirre/git-archive/internal/archive"
@@ -134,7 +135,7 @@ func (e *Engine) plan(d *discovery, only []string) (tasks []*Task, skipped []*Re
 		t := &Task{ID: id, Dir: dir, Repo: c.repo, Source: c.source.Name, Opts: c.opts, Wiki: c.wiki, RenameOf: renamedFrom[id]}
 		if reason := filterReason(cfg, c); reason != "" {
 			out := Filtered
-			if ex, _ := archive.Excluded(cfg.Excludes, id); ex {
+			if strings.Contains(reason, "excluded by pattern") {
 				out = Excluded
 			}
 			skipped = append(skipped, &Result{ID: id, Action: ActSkip, Outcome: out, Reason: reason})
@@ -173,6 +174,12 @@ func (e *Engine) renameSourceExists(oldID string) bool {
 func filterReason(cfg *archive.Config, c *candidate) string {
 	if ex, by := archive.Excluded(cfg.Excludes, c.repo.ID); ex {
 		return "excluded by pattern " + by
+	}
+	if parent, ok := strings.CutSuffix(c.repo.ID, ".wiki"); ok && c.wiki {
+		// A wiki follows its repository.
+		if ex, by := archive.Excluded(cfg.Excludes, parent); ex {
+			return "repository excluded by pattern " + by
+		}
 	}
 	o := c.opts
 	switch {
@@ -283,6 +290,8 @@ func (e *Engine) syncOne(ctx context.Context, slot int, t *Task) *Result {
 	switch {
 	case absent:
 		r.Outcome, r.Reason, err = Absent, "no wiki upstream", nil
+	case err != nil && ctx.Err() != nil:
+		r.Outcome = Interrupted // not the repository's fault; leave state alone
 	case err != nil:
 		r.Outcome, r.err = Failed, err
 		r.Error = safe.TermLine(err.Error())
@@ -302,6 +311,9 @@ func (e *Engine) syncOne(ctx context.Context, slot int, t *Task) *Result {
 	e.Archive.Update(func(st *archive.State) {
 		c := &candidate{repo: t.Repo, source: e.Archive.Config.Source(t.Source), opts: t.Opts, wiki: t.Wiki, listed: true}
 		if c.source == nil {
+			return
+		}
+		if r.Outcome == Interrupted {
 			return
 		}
 		rs := e.rememberCandidate(st, c, now)

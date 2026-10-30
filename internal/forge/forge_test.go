@@ -408,3 +408,19 @@ func TestGeneric(t *testing.T) {
 		t.Error("generic List succeeded")
 	}
 }
+
+func TestResolveKeepsSSHURL(t *testing.T) {
+	_, srv := newFake(t, map[string]func(http.ResponseWriter, *http.Request){
+		"/api/v3/repos/o/r": jsonReply(`{"id":1,"full_name":"o/r","default_branch":"main"}`),
+	})
+	s, err := ParseSpec("git@example.com:o/r.git", GitHub, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.API = srv.URL + "/api/v3"
+	s.Insecure = true
+	r, err := client(t, s, nil).Resolve(context.Background(), s)
+	if err != nil || r.URL != "git@example.com:o/r.git" || r.Scheme != "ssh" {
+		t.Errorf("Resolve = %+v, %v", r, err)
+	}
+}

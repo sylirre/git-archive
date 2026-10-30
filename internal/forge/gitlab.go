@@ -74,7 +74,7 @@ func (g *gitlab) Resolve(ctx context.Context, s Spec) (Spec, error) {
 		r, err := g.Get(ctx, s)
 		if err == nil {
 			s.Type, s.Path = TypeRepo, r.Path
-			s.URL = s.Scheme + "://" + s.Host + "/" + s.Path
+			s.URL = canonicalURL(s)
 			return s, nil
 		}
 		if s.Type == TypeRepo || !errors.Is(err, ErrNotFound) {
@@ -89,7 +89,7 @@ func (g *gitlab) Resolve(ctx context.Context, s Spec) (Spec, error) {
 		return s, err
 	}
 	s.Type, s.Path = TypeOwner, owner
-	s.URL = s.Scheme + "://" + s.Host + "/" + s.Path
+	s.URL = canonicalURL(s)
 	return s, nil
 }
 

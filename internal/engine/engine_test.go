@@ -641,3 +641,56 @@ func TestLFSEnabled(t *testing.T) {
 	up.Commit("main", "x", "y")
 	v.expect(v.sync(), "org/l", engine.Updated)
 }
+
+func TestWikiFollowsRepositoryExclusion(t *testing.T) {
+	v := newEnv(t, archive.LayoutWorktree)
+	v.srv.NewRepo("org/r")
+	v.srv.NewRepo("org/r.wiki")
+	v.srv.Meta("org/r").HasWiki = true
+	v.addOwner("org", map[string]string{"wiki": "true"})
+	if err := v.a.Config.AddExclude(context.Background(), "org/r"); err != nil {
+		t.Fatal(err)
+	}
+	rep := v.sync()
+	v.expect(rep, "org/r", engine.Excluded)
+	v.expect(rep, "org/r.wiki", engine.Excluded)
+}
+
+func TestPreserveStampCollision(t *testing.T) {
+	v := newEnv(t, archive.LayoutBare)
+	up := v.srv.NewRepo("org/r")
+	v.addOwner("org", nil)
+	v.sync()
+	first, _ := up.Rewrite("main")
+	v.sync()
+	v.clock = v.clock.Add(-time.Minute) // the next sync reuses the same timestamp
+	second, _ := up.Rewrite("main")
+	r := v.expect(v.sync(), "org/r", engine.Updated)
+	if r.Preserved != 1 {
+		t.Fatalf("preserved = %d (%s)", r.Preserved, r.Error)
+	}
+	refs := v.refs("org/r", "refs/archive")
+	if !strings.Contains(refs, first) || !strings.Contains(refs, second) || !strings.Contains(refs, "Z-1/heads/main") {
+		t.Errorf("refs/archive:\n%s", refs)
+	}
+}
+
+func TestInterruptedSyncRecordsNoFailure(t *testing.T) {
+	v := newEnv(t, archive.LayoutWorktree)
+	v.srv.NewRepo("org/r")
+	v.addOwner("org", nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	rep, err := v.e.Sync(ctx, engine.SyncOptions{})
+	if err == nil {
+		t.Fatal("cancelled sync reported success")
+	}
+	for _, r := range rep.Results {
+		if r.Outcome == engine.Failed {
+			t.Errorf("%s failed: %s", r.ID, r.Error)
+		}
+	}
+	if rs := v.a.State.Repos[v.id("org/r")]; rs != nil && rs.LastError != "" {
+		t.Errorf("state error = %q", rs.LastError)
+	}
+}

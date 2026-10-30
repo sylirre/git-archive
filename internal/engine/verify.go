@@ -229,7 +229,7 @@ func (e *Engine) GC(ctx context.Context, opts GCOptions) (*Report, error) {
 		if opts.Aggressive {
 			args = append(args, "--aggressive")
 		}
-		if _, err := e.git(ctx, t.Dir, args...); err != nil {
+		if err := e.gitSilent(ctx, t.Dir, args...); err != nil {
 			r.Outcome, r.Error = Failed, safe.TermLine(shortErr(err))
 			return r
 		}

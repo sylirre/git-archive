@@ -103,6 +103,10 @@ type Cmd struct {
 	Progress func(Progress)
 	// MaxOutput bounds captured stdout (default 64 MiB).
 	MaxOutput int64
+	// NoIdleTimeout disables the inactivity watchdog for commands that
+	// legitimately stay silent for long periods without a terminal
+	// (git gc, git-lfs). Cancellation through the context still works.
+	NoIdleTimeout bool
 }
 
 // Error describes a failed git command.
@@ -261,7 +265,7 @@ func (r *Runner) Run(ctx context.Context, c Cmd) ([]byte, error) {
 
 	var timedOut atomic.Bool
 	watchdogDone := make(chan struct{})
-	if r.idle > 0 {
+	if r.idle > 0 && !c.NoIdleTimeout {
 		go func() {
 			t := time.NewTicker(min(r.idle/4, time.Second))
 			defer t.Stop()

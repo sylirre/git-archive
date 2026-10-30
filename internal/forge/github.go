@@ -67,7 +67,7 @@ func (g *github) Resolve(ctx context.Context, s Spec) (Spec, error) {
 		}
 		s.Path = r.Path
 	}
-	s.URL = s.Scheme + "://" + s.Host + "/" + s.Path
+	s.URL = canonicalURL(s)
 	return s, nil
 }
 

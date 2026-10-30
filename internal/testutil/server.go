@@ -297,7 +297,8 @@ func (u *Upstream) Rewrite(branch string) (old, nu string) {
 	u.t.Helper()
 	Git(u.t, u.Work, "checkout", "-q", branch)
 	old = Git(u.t, u.Work, "rev-parse", "HEAD")
-	Git(u.t, u.Work, "commit", "-q", "--amend", "-m", "rewritten")
+	u.n++
+	Git(u.t, u.Work, "commit", "-q", "--amend", "-m", fmt.Sprintf("rewritten %d", u.n))
 	Git(u.t, u.Work, "push", "-q", "--force", "origin", branch)
 	return old, Git(u.t, u.Work, "rev-parse", "HEAD")
 }
