@@ -23,9 +23,12 @@ VERSION ?= $(or $(GIT_TAG),$(or $(GIT_BASE),dev)+$(GIT_SHA))$(if $(GIT_DIRTY),-d
 endif
 LDFLAGS := -s -w -X github.com/sylirre/git-archive/internal/cli.Version=$(VERSION)
 
-.PHONY: all build test race vet cover completions install uninstall clean
+.PHONY: all version build test race vet cover completions install uninstall clean
 
 all: build
+
+version:
+	@echo $(VERSION)
 
 build:
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags '$(LDFLAGS)' -o git-archive ./cmd/git-archive

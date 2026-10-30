@@ -5,6 +5,8 @@ name: CI
 
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -52,18 +54,74 @@ jobs:
           - {goos: linux, goarch: arm64}
           - {goos: android, goarch: arm64}
           - {goos: darwin, goarch: arm64}
+          - {goos: darwin, goarch: amd64}
           - {goos: freebsd, goarch: amd64}
           - {goos: windows, goarch: amd64}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # Tags are needed for the version string (see the Makefile).
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Cross-compile
+      - name: Build and package
         env:
           CGO_ENABLED: "0"
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-        run: go build -trimpath -o /dev/null ./cmd/git-archive
+        run: |
+          set -eu
+          make build
+          version=$(make -s version)
+          name="git-archive-${version}-${GOOS}-${GOARCH}"
+          exe=git-archive
+          [ "$GOOS" = windows ] && exe=git-archive.exe && mv git-archive "$exe"
+          mkdir -p "dist/$name"
+          cp "$exe" LICENSE THIRD_PARTY_LICENSES README.md "dist/$name/"
+          if [ "$GOOS" != windows ]; then
+            cp doc/git-archive.1 "dist/$name/"
+            cp -r contrib/completion "dist/$name/completion"
+          fi
+          cd dist
+          if [ "$GOOS" = windows ]; then
+            zip -qr "$name.zip" "$name"
+          else
+            tar --owner=0 --group=0 -czf "$name.tar.gz" "$name"
+          fi
+          rm -r "$name"
+          ls -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          retention-days: 7
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum git-archive-* > SHA256SUMS && cat SHA256SUMS
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          flags=""
+          case "$TAG" in *-*) flags="--prerelease" ;; esac
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" \
+            --generate-notes $flags
