@@ -7,7 +7,20 @@ MANDIR  ?= $(PREFIX)/share/man
 DATADIR ?= $(PREFIX)/share
 DOCDIR  ?= $(DATADIR)/doc/git-archive
 GO      ?= go
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+# Version scheme:
+#   v1.2.0              HEAD is tagged
+#   v1.2.0+3f9a1c2      commits after the nearest tag (no tag: dev+3f9a1c2)
+#   ...-dirty           uncommitted changes in the working tree
+# Outside a git checkout (source tarball) the version is "dev".
+GIT_SHA   := $(shell git rev-parse --short=7 HEAD 2>/dev/null)
+GIT_TAG   := $(shell git describe --tags --exact-match 2>/dev/null)
+GIT_BASE  := $(shell git describe --tags --abbrev=0 2>/dev/null)
+GIT_DIRTY := $(shell git status --porcelain 2>/dev/null | head -n1)
+ifeq ($(GIT_SHA),)
+VERSION ?= dev
+else
+VERSION ?= $(or $(GIT_TAG),$(or $(GIT_BASE),dev)+$(GIT_SHA))$(if $(GIT_DIRTY),-dirty)
+endif
 LDFLAGS := -s -w -X github.com/sylirre/git-archive/internal/cli.Version=$(VERSION)
 
 .PHONY: all build test race vet cover completions install uninstall clean
