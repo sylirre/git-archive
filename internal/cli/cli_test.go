@@ -305,3 +305,17 @@ func mustRunner(t *testing.T) *gitx.Runner {
 	}
 	return r
 }
+
+// TestCommittedCompletions keeps contrib/completion in sync with the
+// generator; packagers install those files without running the binary
+// (which may be cross-compiled). Regenerate with "make completions".
+func TestCommittedCompletions(t *testing.T) {
+	files := map[string]string{"bash": "git-archive.bash", "zsh": "_git-archive", "fish": "git-archive.fish"}
+	for shell, name := range files {
+		want, _ := completionScript(shell)
+		got, err := os.ReadFile(filepath.Join("..", "..", "contrib", "completion", name))
+		if err != nil || string(got) != want {
+			t.Errorf("contrib/completion/%s is stale; run make completions", name)
+		}
+	}
+}

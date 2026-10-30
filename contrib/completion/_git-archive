@@ -1,0 +1,186 @@
+#compdef git-archive
+
+_git_archive() {
+  local -a cmds
+  cmds=(
+    'sync:add sources (if given) and clone or update all repositories'
+    'add:add or reconfigure sources without syncing'
+    'remove:forget sources (their repositories stay on disk)'
+    'exclude:stop cloning and updating matching repositories'
+    'include:undo an exclusion'
+    'list:show repositories and their status'
+    'verify:check repository integrity (git fsck) and optionally upstream drift'
+    'gc:repack repositories and remove leftovers of interrupted clones'
+    'config:read or edit the archive configuration'
+    'completion:print a shell completion script'
+    'help:show help'
+    'version:show version'
+  )
+  local i cmd
+  for (( i = 2; i < CURRENT; i++ )); do
+    case ${words[i]} in
+      sync|add|remove|rm|exclude|include|list|ls|status|verify|gc|config|completion|help|version) cmd=${words[i]}; break ;;
+    esac
+  done
+  if [[ -z $cmd && ${words[CURRENT]} != -* ]]; then
+    _describe -t commands 'git-archive command' cmds
+  fi
+  case ${cmd:-sync} in
+    sync)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '(-p --provider)'{-p,--provider}'[provider of the following sources\: github, gitlab, gitea or git]:NAME:(github gitlab gitea git)' \
+        '--insecure[allow unencrypted http\:// and git\:// sources]' \
+        '--skip-forks[do not archive forks]' \
+        '--skip-archived[do not archive repositories archived upstream]' \
+        '--max-size[skip repositories larger than SIZE (e.g. 2G)]:SIZE: ' \
+        '--wiki[also archive wikis]' \
+        '--lfs[also fetch Git LFS objects (needs git-lfs)]' \
+        '--no-metadata[do not save repository metadata snapshots]' \
+        '--no-preserve[do not keep history rewritten upstream under refs/archive/]' \
+        '--ssh[clone over ssh instead of https]' \
+        '--token-env[environment variable holding the access token for these sources]:VAR: ' \
+        '--api[API base URL (self-hosted instances with a non-standard location)]:URL: ' \
+        '(-x --exclude)'{-x,--exclude}'[exclude matching repositories (repeatable)]:PATTERN: ' \
+        '--layout[for a new archive\: worktree (default) or bare]:LAYOUT:(worktree bare)' \
+        '--init[allow creating an archive in a non-empty directory]' \
+        '(-o --only)'{-o,--only}'[sync only matching repositories (repeatable)]:PATTERN: ' \
+        '(-n --dry-run)'{-n,--dry-run}'[show what would be done without changing anything]' \
+        '(-j --jobs)'{-j,--jobs}'[repositories processed in parallel (default\: archive.jobs, 4)]:N: ' \
+        '--timeout[abort git after this long without output (default\: archive.timeout, 10m)]:DURATION: ' \
+        '--json[print a JSON report on stdout]' \
+        '*:argument: ' ;;
+    add)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '(-p --provider)'{-p,--provider}'[provider of the following sources\: github, gitlab, gitea or git]:NAME:(github gitlab gitea git)' \
+        '--insecure[allow unencrypted http\:// and git\:// sources]' \
+        '--skip-forks[do not archive forks]' \
+        '--skip-archived[do not archive repositories archived upstream]' \
+        '--max-size[skip repositories larger than SIZE (e.g. 2G)]:SIZE: ' \
+        '--wiki[also archive wikis]' \
+        '--lfs[also fetch Git LFS objects (needs git-lfs)]' \
+        '--no-metadata[do not save repository metadata snapshots]' \
+        '--no-preserve[do not keep history rewritten upstream under refs/archive/]' \
+        '--ssh[clone over ssh instead of https]' \
+        '--token-env[environment variable holding the access token for these sources]:VAR: ' \
+        '--api[API base URL (self-hosted instances with a non-standard location)]:URL: ' \
+        '(-x --exclude)'{-x,--exclude}'[exclude matching repositories (repeatable)]:PATTERN: ' \
+        '--layout[for a new archive\: worktree (default) or bare]:LAYOUT:(worktree bare)' \
+        '--init[allow creating an archive in a non-empty directory]' \
+        '*:argument: ' ;;
+    remove|rm)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '*:argument: ' ;;
+    exclude)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '*:argument: ' ;;
+    include)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '*:argument: ' ;;
+    list|ls|status)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '--json[print JSON]' \
+        '(-s --sources)'{-s,--sources}'[list sources instead of repositories]' \
+        '*:argument: ' ;;
+    verify)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '--quick[check connectivity only (much faster, does not hash every object)]' \
+        '(-r --remote)'{-r,--remote}'[compare refs with upstream (no download)]' \
+        '(-j --jobs)'{-j,--jobs}'[repositories processed in parallel (default\: archive.jobs, 4)]:N: ' \
+        '--timeout[abort git after this long without output (default\: archive.timeout, 10m)]:DURATION: ' \
+        '--json[print a JSON report on stdout]' \
+        '*:argument: ' ;;
+    gc)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '--aggressive[pass --aggressive to git gc (slow, better compression)]' \
+        '(-j --jobs)'{-j,--jobs}'[repositories processed in parallel (default\: archive.jobs, 4)]:N: ' \
+        '--timeout[abort git after this long without output (default\: archive.timeout, 10m)]:DURATION: ' \
+        '--json[print a JSON report on stdout]' \
+        '*:argument: ' ;;
+    config)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '*:argument: ' ;;
+    completion)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '1:shell:(bash zsh fish)' ;;
+    help)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '1:command:(sync add remove rm exclude include list ls status verify gc config completion help version)' ;;
+    version)
+      _arguments -s \
+        '(-C --archive-dir)'{-C,--archive-dir}'[archive location (default\: $GIT_ARCHIVE_DIR or the current directory)]:DIR:_files -/' \
+        '(-q --quiet)'{-q,--quiet}'[print only errors and warnings]' \
+        '(-v --verbose)'{-v,--verbose}'[also report unchanged and skipped repositories]' \
+        '--color[colorize output\: auto, always or never]:WHEN:(auto always never)' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '--version[show version]' \
+        '*:argument: ' ;;
+  esac
+}
+
+_git_archive "$@"

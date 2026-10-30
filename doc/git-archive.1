@@ -1,0 +1,440 @@
+.TH GIT\-ARCHIVE 1 "2026-10-30" "git-archive 0.1.0" "User Commands"
+.SH NAME
+git\-archive \- clone, update and verify archives of git repositories
+.SH SYNOPSIS
+.B git\-archive
+.RI [ OPTIONS ]
+.RI [ SOURCE ...]
+.br
+.B git\-archive
+.I COMMAND
+.RI [ OPTIONS ]
+.RI [ ARGS ]
+.SH DESCRIPTION
+.B git\-archive
+maintains a directory of git repositories collected from
+.IR sources :
+whole organizations, users and groups on GitHub, GitLab and Gitea/Forgejo,
+or single repositories on any git server.
+The first run clones everything; later runs fetch what changed.
+Work runs in parallel with live progress.
+.PP
+An archive never loses data on its own.
+Repositories deleted upstream are kept and flagged as
+.IR gone .
+Branches and tags that upstream force\-pushes, moves or deletes are
+preserved under
+.I refs/archive/
+before they are replaced.
+Excluded repositories stay on disk but are no longer updated.
+.PP
+Note that
+.B git archive
+(with a space) is an unrelated built\-in git command; invoke this
+program as
+.BR git\-archive .
+.SH COMMANDS
+.TP
+.BR sync " [" \fISOURCE\fR ...]
+The default command.
+Adds the given sources (creating the archive if needed), then clones new
+and updates existing repositories.
+Without sources it updates the archive.
+.TP
+.BI add " SOURCE" ...
+Adds sources, or updates the options of existing ones, without syncing.
+.TP
+.BI remove " SOURCE" ...
+Forgets sources (alias
+.BR rm ).
+Their repositories stay on disk and are listed as
+.IR orphaned .
+.TP
+.BI exclude " PATTERN" ...
+Stops cloning and updating matching repositories.
+.TP
+.BI include " PATTERN" ...
+Removes an exclusion.
+If a broader pattern still excludes matching repositories, a negated
+pattern
+.RI ( !PATTERN )
+is added.
+.TP
+.BR list " [" \fIPATTERN\fR ...]
+Lists repositories and their status without network access
+(aliases
+.BR ls ,
+.BR status ).
+Statuses: ok, failed, corrupt, missing, pending, gone, excluded,
+filtered, orphaned, unmanaged, absent.
+With
+.BR \-\-sources ,
+lists the configured sources instead.
+.TP
+.BR verify " [" \fIPATTERN\fR ...]
+Checks every repository with
+.BR "git fsck \-\-strict" ,
+verifies its remote URL and HEAD, and reports modified working trees.
+.TP
+.BR gc " [" \fIPATTERN\fR ...]
+Runs
+.B git gc
+on repositories in parallel and removes leftovers of interrupted clones.
+.TP
+.BR config " [" \fIGIT\-CONFIG\-ARGS\fR ...]
+Runs
+.B git config \-\-file .git\-archive/config
+with the given arguments (default
+.BR \-\-list ;
+.B \-\-edit
+opens the file in an editor) and validates the result.
+.TP
+.BI completion " SHELL"
+Prints a completion script for
+.BR bash ,
+.B zsh
+or
+.BR fish .
+.TP
+.BR help " [" \fICOMMAND\fR "], " version
+Show help or the version.
+.SH SOURCES
+.TP
+.B https://github.com/termux
+All repositories of an organization or user.
+.B http://
+URLs of known forges are upgraded to
+.BR https:// .
+.TP
+.B https://github.com/termux/termux\-app
+A single repository.
+.TP
+.B \-\-provider github termux
+The same as an owner URL on the provider's public instance
+(github.com, gitlab.com, codeberg.org).
+.TP
+.B https://gitlab.com/group/subgroup
+A GitLab group (including subgroups), user or project.
+.TP
+.B https://codeberg.org/forgejo
+A Gitea or Forgejo owner or repository.
+Self\-hosted instances are recognized by host names starting with
+.BR gitlab. ,
+.B gitea.
+or
+.BR forgejo. ,
+or need
+.BR \-\-provider .
+.TP
+.BR git@host:owner/repo.git ", " ssh://... ", " https://host/path/repo.git
+Any git repository.
+Local repositories may be given as a path or
+.B file://
+URL.
+.SH OPTIONS
+.SS Global options
+.TP
+.BI \-C ", " \-\-archive\-dir " DIR"
+Archive location.
+Defaults to
+.B $GIT_ARCHIVE_DIR
+or the current directory.
+.TP
+.BR \-q ", " \-\-quiet
+Print only errors and warnings; suitable for cron.
+.TP
+.BR \-v ", " \-\-verbose
+Also report unchanged and skipped repositories.
+.TP
+.BI \-\-color " WHEN"
+.BR auto " (default), " always " or " never .
+.B NO_COLOR
+is honoured.
+.TP
+.BR \-h ", " \-\-help ", " \-\-version
+.SS Options of sync, verify and gc
+.TP
+.BI \-j ", " \-\-jobs " N"
+Repositories processed in parallel (default: archive.jobs, 4).
+.TP
+.BI \-\-timeout " DURATION"
+Abort a git command that produces no output for this long
+(default: archive.timeout, 10m).
+.TP
+.B \-\-json
+Print a machine\-readable report on standard output.
+.SS Options of sync and add
+.TP
+.BI \-p ", " \-\-provider " NAME"
+Provider of the following sources:
+.BR github ", " gitlab ", " gitea " or " git .
+.TP
+.BR \-\-skip\-forks ", " \-\-skip\-archived
+Do not archive forks or repositories archived upstream.
+.TP
+.BI \-\-max\-size " SIZE"
+Skip repositories larger than
+.I SIZE
+(e.g.
+.BR 2G )
+as reported by the API.
+.TP
+.B \-\-wiki
+Also archive wiki repositories.
+.TP
+.B \-\-lfs
+Also fetch Git LFS objects (requires git\-lfs).
+.TP
+.B \-\-no\-preserve
+Do not keep history rewritten upstream under
+.IR refs/archive/ .
+.TP
+.B \-\-no\-metadata
+Do not save metadata snapshots.
+.TP
+.B \-\-ssh
+Clone over ssh instead of https.
+.TP
+.BI \-\-token\-env " VAR"
+Environment variable that holds an access token for these sources.
+.TP
+.BI \-\-api " URL"
+API base URL for instances at a non\-standard location.
+.TP
+.B \-\-insecure
+Allow unencrypted
+.B http://
+and
+.B git://
+sources.
+.TP
+.BI \-x ", " \-\-exclude " PATTERN"
+Exclude matching repositories.
+.TP
+.BI \-\-layout " LAYOUT"
+For a new archive:
+.B worktree
+(default; a checked\-out default branch) or
+.B bare
+(no working tree; smaller, and nothing from the repositories is
+written as files).
+.TP
+.B \-\-init
+Allow creating an archive in a non\-empty directory.
+.TP
+.BI \-o ", " \-\-only " PATTERN"
+(sync) Process only matching repositories.
+.TP
+.BR \-n ", " \-\-dry\-run
+(sync) Show what would be cloned, updated and skipped; change nothing.
+.SS Options of verify and gc
+.TP
+.B \-\-quick
+(verify) Check connectivity only; much faster.
+.TP
+.BR \-r ", " \-\-remote
+(verify) Compare local refs with upstream using
+.BR "git ls\-remote" ;
+nothing is downloaded.
+.TP
+.B \-\-aggressive
+(gc) Pass
+.B \-\-aggressive
+to
+.BR "git gc" .
+.SH PATTERNS
+Patterns select repositories by ID,
+.IR host/owner/repo .
+Each slash\-separated part is a shell glob
+.RB ( * ", " ? ", " [...] );
+.B **
+spans parts.
+A pattern may match any contiguous part of the ID, so
+.BR termux\-packages ,
+.B termux/termux\-packages
+and
+.B github.com/termux/termux\-packages
+select the same repository, and
+.B github.com/termux
+selects everything below it.
+A leading
+.B /
+anchors at the host.
+In the exclusion list,
+.B !PATTERN
+re\-includes and the last matching pattern decides.
+Wikis follow their repository.
+.SH CONFIGURATION
+.I .git\-archive/config
+uses
+.BR git\-config (1)
+syntax and may be edited by hand; comments are preserved.
+.SS [archive]
+.TP
+.B layout
+.BR worktree " or " bare ;
+fixed at creation.
+.TP
+.BR jobs ", " timeout ", " retries
+Parallelism (4), inactivity timeout (10m), retries of transient
+network failures (2).
+.TP
+.B exclude
+Exclusion pattern; repeatable.
+.PP
+Any per\-source option below may also be set in
+.B [archive]
+as the default for all sources.
+.SS [source "NAME"]
+.TP
+.BR url ", " provider ", " type
+Where the source lives;
+.B type
+is
+.B owner
+or
+.BR repo .
+.TP
+.BR api ", " insecure ", " tokenEnv
+As the corresponding options.
+.TP
+.BR skipForks ", " skipArchived ", " maxSize ", " wiki ", " lfs
+Selection options (defaults: false, false, unlimited, false, false).
+.TP
+.BR metadata ", " preserve
+Metadata snapshots and preservation of rewritten refs (default: true).
+.TP
+.B protocol
+.B https
+(default) or
+.BR ssh .
+.SH FILES
+.TP
+.I <archive>/<host>/<owner>/<repo>
+Repositories (with a
+.B .git
+suffix in the bare layout).
+.TP
+.I <archive>/.git\-archive/config
+Configuration.
+.TP
+.I <archive>/.git\-archive/state.json
+Bookkeeping (sync and verify results, forge IDs, gone dates).
+Rebuilt automatically if lost or damaged.
+.TP
+.I <archive>/.git\-archive/metadata/<host>/<owner>/<repo>.json
+Metadata snapshots: description, topics, license, stars, dates.
+.TP
+.I <archive>/.git\-archive/lock
+Prevents concurrent modifying runs.
+.TP
+.I <repo>/refs/archive/<UTC\-time>/{heads,tags,local}/<name>
+Tips that upstream rewrote or deleted, and local commits that a
+checkout would have orphaned.
+.SH ENVIRONMENT
+.TP
+.B GIT_ARCHIVE_DIR
+Default archive location.
+.TP
+.BR GITHUB_TOKEN ", " GH_TOKEN
+Token for github.com.
+.TP
+.B GITLAB_TOKEN
+Token for gitlab.com.
+.TP
+.BR CODEBERG_TOKEN ", " GITEA_TOKEN
+Token for codeberg.org.
+.PP
+These variables are used only for the public instances they belong to;
+self\-hosted sources name their variable with
+.BR \-\-token\-env .
+Tokens are never written to disk.
+.SH SECURITY
+Repository content, forge API responses and server messages are
+treated as hostile:
+.IP \(bu 2
+Names from APIs are validated before they become paths (no
+.BR .. ,
+.BR .git ,
+separators or leading dashes); repositories outside the requested
+owner are ignored; clone URLs are built locally instead of being taken
+from API responses.
+.IP \(bu 2
+git runs with configuration that cannot be overridden by repositories
+or user files: hooks and fsmonitor disabled,
+.B transfer.fsckObjects
+(malicious trees are rejected before they are stored), only the needed
+transports allowed
+.RB ( ext:: " and " file://
+are refused), no submodule recursion, no LFS downloads during
+checkout, protection against NTFS/HFS+ path aliases.
+.IP \(bu 2
+git runs in its own session without a controlling terminal and in its
+own process group, with credential prompts disabled; nothing it spawns
+can prompt on or write to the terminal, and the whole group is killed
+on interruption or inactivity.
+.IP \(bu 2
+Text from servers and repositories is stripped of control characters
+before it is printed, so escape sequences cannot reach the terminal.
+.IP \(bu 2
+HTTP requests are size\- and time\-limited and refuse redirects and
+pagination links that leave the API host.
+.PP
+When browsing a working\-tree archive with your own git, consider
+setting
+.B safe.bareRepository=explicit
+in your global git configuration.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+A repository failed, or the command failed.
+.TP
+.B 2
+Usage error.
+.TP
+.B 130
+Interrupted.
+.SH EXAMPLES
+Create an archive of two GitHub owners, skipping forks:
+.PP
+.RS
+.nf
+mkdir archive && cd archive
+git\-archive \-\-skip\-forks https://github.com/termux https://github.com/sylirre
+.fi
+.RE
+.PP
+Update quietly from cron every night:
+.PP
+.RS
+.nf
+15 3 * * *  git\-archive \-C /srv/archive \-\-quiet
+.fi
+.RE
+.PP
+Stop updating one repository, then check integrity and upstream drift:
+.PP
+.RS
+.nf
+git\-archive exclude termux/termux\-packages
+git\-archive verify \-\-remote
+.fi
+.RE
+.PP
+Archive a self\-hosted GitLab group with a token:
+.PP
+.RS
+.nf
+MY_GL=glpat\-... git\-archive \-\-token\-env MY_GL https://git.example.org/group \e
+    \-\-provider gitlab
+.fi
+.RE
+.SH SEE ALSO
+.BR git (1),
+.BR git\-clone (1),
+.BR git\-fetch (1),
+.BR git\-fsck (1),
+.BR git\-config (1)
