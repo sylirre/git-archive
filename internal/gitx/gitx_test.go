@@ -261,12 +261,12 @@ func TestOutputLimit(t *testing.T) {
 func TestTransientClassification(t *testing.T) {
 	cases := map[string]bool{
 		"fatal: unable to access 'https://x/': Could not resolve host: x":     true,
-		"error: RPC failed; curl 92 HTTP/2 stream 5 was not closed cleanly":  true,
-		"fatal: the remote end hung up unexpectedly":                         true,
-		"error: The requested URL returned error: 502":                       true,
-		"fatal: repository 'https://github.com/a/b/' not found":              false,
-		"error: object 0123: hasDotgit: contains '.git'\nfatal: early EOF":   false,
-		"fatal: fsck error in packed object\nfatal: the remote end hung up":  false,
+		"error: RPC failed; curl 92 HTTP/2 stream 5 was not closed cleanly":   true,
+		"fatal: the remote end hung up unexpectedly":                          true,
+		"error: The requested URL returned error: 502":                        true,
+		"fatal: repository 'https://github.com/a/b/' not found":               false,
+		"error: object 0123: hasDotgit: contains '.git'\nfatal: early EOF":    false,
+		"fatal: fsck error in packed object\nfatal: the remote end hung up":   false,
 		"fatal: could not read Username for 'https://github.com': terminal p": false,
 	}
 	for text, want := range cases {
