@@ -70,7 +70,7 @@ func (u *UI) slotStatus(sl slot, width int) string {
 	s := u.sty
 	elapsed := time.Since(sl.since)
 	if !sl.hasProg {
-		return s.dim(fmt.Sprintf("%s… %s", sl.step, units.FormatDuration(elapsed.Truncate(time.Second))))
+		return s.dim(fmt.Sprintf("%s… %s", sl.step, clock(elapsed)))
 	}
 	p := sl.prog
 	phase := strings.ToLower(p.Phase)
@@ -85,14 +85,16 @@ func (u *UI) slotStatus(sl slot, width int) string {
 	if p.Detail != "" {
 		detail = "  " + s.dim(safe.Term(p.Detail))
 	}
-	barW := max(min(width-22-6-len(p.Detail)-4, 30), 8)
+	// Reserve room for the throughput text up front so the bar does not
+	// jump when git starts reporting it.
+	barW := max(min(width-22-6-28, 30), 8)
 	return phase + " " + fmt.Sprintf("%3d%%", p.Percent) + " " + s.bar(float64(p.Percent)/100, barW) + detail
 }
 
 // statusLine renders the phase, overall bar, counts and elapsed time.
 func (u *UI) statusLine(width int) string {
 	s := u.sty
-	elapsed := units.FormatDuration(time.Since(u.start).Truncate(time.Second))
+	elapsed := clock(time.Since(u.start))
 	if u.total == 0 || u.phase == "Listing sources" {
 		return " " + s.bold(u.phase+"…") + "  " + s.dim(elapsed)
 	}
@@ -193,4 +195,12 @@ func cut(s string, width int) string {
 	}
 	b.WriteString("\x1b[0m")
 	return b.String()
+}
+
+// clock renders an elapsed time with second resolution: "7s", "4m05s".
+func clock(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	return units.FormatDuration(d)
 }

@@ -168,3 +168,28 @@ func (a *Archive) MetadataPath(id string) (string, error) {
 	}
 	return safe.Join(filepath.Join(a.Root, MetaDir, "metadata"), safe.HostDir(host)+"/"+path+".json")
 }
+
+// Scratch returns an in-memory archive rooted at root with default
+// settings. Nothing is written; it serves dry runs for archives that do
+// not exist yet.
+func Scratch(root, layout string) *Archive {
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		abs = root
+	}
+	cfg := &Config{Version: 1, Layout: layout, Jobs: DefaultJobs, Timeout: DefaultTimeout, Retries: DefaultRetries,
+		Defaults: map[string]string{}}
+	return &Archive{Root: abs, Config: cfg, State: newState()}
+}
+
+// AddSourceInMemory adds or replaces a source without writing the
+// configuration file (dry runs).
+func (c *Config) AddSourceInMemory(s *Source) {
+	for i, old := range c.Sources {
+		if old.Name == s.Name {
+			c.Sources[i] = s
+			return
+		}
+	}
+	c.Sources = append(c.Sources, s)
+}

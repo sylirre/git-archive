@@ -68,8 +68,12 @@ func (e *Engine) entry(id string, disk bool) Entry {
 		en.Status, en.Detail = "gone", "missing upstream since "+rs.Gone.Local().Format("2006-01-02")
 	case excluded:
 		en.Status, en.Detail = "excluded", "pattern "+by
-	case rs.Fork && opts.SkipForks, rs.Archived && opts.SkipArchived, opts.MaxSize > 0 && rs.Size > opts.MaxSize:
-		en.Status = "filtered"
+	case rs.Fork && opts.SkipForks:
+		en.Status, en.Detail = "filtered", "fork (skipForks)"
+	case rs.Archived && opts.SkipArchived:
+		en.Status, en.Detail = "filtered", "archived upstream (skipArchived)"
+	case opts.MaxSize > 0 && rs.Size > opts.MaxSize:
+		en.Status, en.Detail = "filtered", "larger than maxSize"
 	case !rs.Absent.IsZero() && !disk:
 		en.Status, en.Detail = "absent", "no wiki upstream"
 	case rs.LastError != "":
