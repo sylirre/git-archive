@@ -1,0 +1,4 @@
+/git-archive
+/dist/
+/coverage.out
+*.test
